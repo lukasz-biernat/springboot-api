@@ -4,7 +4,7 @@ metadata:
   name: springboot-api-ingress
 spec:
   rules:
-  - host: {{ .Values.ingress.host }} # dev.example.com or prd.example.com
+  - host: {{ .Values.ingress.host }}
     http:
       paths:
       - path: /api

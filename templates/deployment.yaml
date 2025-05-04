@@ -11,18 +11,17 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 25%
-      maxUnavailable: 25% # example values
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: springboot-api
       annotations:
-        checksum/configmap: {{ include "springboot-api.configmap" . | sha256sum }} # checksum
-        checksum/secret: {{ include "springboot-api.secret" . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
       - name: springboot-api
-        image: busybox:stable # Use the specified image
+        image: ghcr.io/lukasz-biernat/busybox:stable
         ports:
         - containerPort: 8080
           name: http
@@ -59,13 +58,13 @@ spec:
             secretKeyRef:
               name: springboot-api-secret
               key: secret-key-2
-        args: # Spring Boot active profiles
-        - "--spring.profiles.active={{ .Values.envName }}" # dev or prd
+        args:
+        - "--spring.profiles.active={{ .Values.env }}" # dev or prd
         volumeMounts:
         - name: config-volume
           mountPath: /app/config.json
           subPath: config.json
-        resources: # Requests and limits
+        resources:
           requests:
             cpu: 100m
             memory: 128Mi
@@ -79,4 +78,4 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: springboot-api-config
+          name: springboot-api-configmap

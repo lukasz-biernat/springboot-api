@@ -19,23 +19,23 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: springboot-api-appset
-  namespace: argocd # ApplicationSet should reside in the Argo CD namespace
+  namespace: argocd
 spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
   generators:
   - list:
       elements:
       - cluster: dev-global-cluster-0
         env: dev
         replicaCount: "3"
-        host: dev.example.com # example hostnames
-        clusterName: dev-global-cluster-0 # Added for Helm
-        envName: dev             # Added for Helm
+        url: https://dev-global-cluster-0
+        host: dev-global-cluster-0
       - cluster: prd-global-cluster-5
         env: prd
         replicaCount: "5"
-        host: prd.example.com # example hostnames
-        clusterName: prd-global-cluster-5 # Added for Helm
-        envName: prd 
+        url: https://prd-global-cluster-5
+        host: prd-global-cluster-5
   template:
     metadata:
       name: springboot-api-{{ .env }}-{{ .cluster }} # Application name: springboot-api-dev, springboot-api-prd.  Include cluster name.
@@ -52,14 +52,10 @@ spec:
           parameters:
           - name: replicaCount
             value: '{{ .replicaCount }}'
-          - name: environment
-            value: '{{ .envName }}'  # Changed to use .envName
+          - name: env
+            value: '{{ .env }}'
           - name: ingress.host
             value: '{{ .host }}'
-          - name: clusterName # Pass the cluster name to the helm chart.
-            value: '{{ .clusterName }}' # Changed to use .clusterName
-          - name: envName # Pass the environment name
-            value: '{{ .envName }}'
       destination:
         server: 'https://{{ .cluster }}'
         namespace: springboot-api
