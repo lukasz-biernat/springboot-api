@@ -1,0 +1,71 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: inpost
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  sourceRepos:
+    - '*'
+  sourceNamespaces:
+    - '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: springboot-api-appset
+  namespace: argocd # ApplicationSet should reside in the Argo CD namespace
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: dev-global-cluster-0
+        env: dev
+        replicaCount: "3"
+        host: dev.example.com # example hostnames
+        clusterName: dev-global-cluster-0 # Added for Helm
+        envName: dev             # Added for Helm
+      - cluster: prd-global-cluster-5
+        env: prd
+        replicaCount: "5"
+        host: prd.example.com # example hostnames
+        clusterName: prd-global-cluster-5 # Added for Helm
+        envName: prd 
+  template:
+    metadata:
+      name: springboot-api-{{ .env }}-{{ .cluster }} # Application name: springboot-api-dev, springboot-api-prd.  Include cluster name.
+      namespace: springboot-api
+      finalizers:
+      - resources.argocd.argoproj.io/foreground
+    spec:
+      project: inpost
+      source:
+        repoURL: 'https://github.com/lukasz-biernat/springboot-api.git'
+        targetRevision: HEAD
+        helm:
+#          chart: springboot-api # Name of the helm chart in the repository
+          parameters:
+          - name: replicaCount
+            value: '{{ .replicaCount }}'
+          - name: environment
+            value: '{{ .envName }}'  # Changed to use .envName
+          - name: ingress.host
+            value: '{{ .host }}'
+          - name: clusterName # Pass the cluster name to the helm chart.
+            value: '{{ .clusterName }}' # Changed to use .clusterName
+          - name: envName # Pass the environment name
+            value: '{{ .envName }}'
+      destination:
+        server: 'https://{{ .cluster }}'
+        namespace: springboot-api
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

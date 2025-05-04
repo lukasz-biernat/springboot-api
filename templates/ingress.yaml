@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: springboot-api-ingress
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }} # dev.example.com or prd.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: springboot-api-service
+            port:
+              name: http
+      - path: /logs
+        pathType: Prefix
+        backend:
+          service:
+            name: springboot-api-service
+            port:
+              name: logs
+      - path: /soap
+        pathType: Prefix
+        backend:
+          service:
+            name: springboot-api-service
+            port:
+              name: soap
